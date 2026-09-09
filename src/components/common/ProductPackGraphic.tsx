@@ -16,6 +16,12 @@ interface ProductPackGraphicProps {
   price?: number;
   productName?: string;
   customImageSrc?: string;
+  images?: {
+    front?: string;
+    back?: string;
+    closeup?: string;
+    lifestyle?: string;
+  };
 }
 
 
@@ -26,43 +32,68 @@ export const ProductPackGraphic: React.FC<ProductPackGraphicProps> = ({
   price = 399,
   productName = 'Doctor Makhana Premium Fox Nuts',
   customImageSrc,
+  images,
 }) => {
   const [isZoomed, setIsZoomed] = useState(false);
 
+  const effectiveCustomImage =
+    customImageSrc ||
+    (images?.front &&
+    (images.front.startsWith('http://') ||
+      images.front.startsWith('https://') ||
+      images.front.startsWith('/api/') ||
+      images.front.startsWith('data:'))
+      ? images.front
+      : undefined);
+
   // If custom uploaded image is provided, display exact uploaded file
-  if (customImageSrc) {
+  if (effectiveCustomImage && (type === 'front' || type === 'real')) {
+    const isCompact =
+      className.includes('h-full') ||
+      className.includes('h-24') ||
+      className.includes('h-12') ||
+      className.includes('h-16') ||
+      className.includes('max-w-[200px]') ||
+      className.includes('max-w-[190px]');
+
     return (
       <div
-        className={`relative group overflow-hidden rounded-3xl bg-white shadow-xl border border-teal-100 flex flex-col ${className}`}
+        className={`relative group overflow-hidden rounded-2xl bg-white flex flex-col ${
+          isCompact ? '' : 'shadow-xl border border-teal-100'
+        } ${className}`}
       >
-        <div className="relative w-full aspect-[3/4] overflow-hidden bg-gradient-to-b from-[#EDFAF8] via-white to-[#E4F6F4] flex items-center justify-center p-2">
+        <div className="relative w-full flex-1 aspect-[3/4] overflow-hidden bg-gradient-to-b from-[#EDFAF8] via-white to-[#E4F6F4] flex items-center justify-center p-2">
           <img
-            src={customImageSrc}
+            src={effectiveCustomImage}
             alt={productName || 'Doctor Makhana'}
             referrerPolicy="no-referrer"
             className="w-full h-full object-contain drop-shadow-md group-hover:scale-105 transition-transform duration-300"
           />
 
-          <div className="absolute top-3 left-3 bg-white/90 backdrop-blur-sm border border-emerald-300 rounded-full px-2.5 py-1 flex items-center gap-1.5 shadow-sm">
-            <div className="w-3 h-3 border border-emerald-600 rounded-sm flex items-center justify-center p-0.5">
-              <div className="w-1.5 h-1.5 rounded-full bg-emerald-600"></div>
+          <div className="absolute top-2 left-2 bg-white/95 backdrop-blur-sm border border-emerald-300 rounded-full px-2 py-0.5 flex items-center gap-1 shadow-sm">
+            <div className="w-2.5 h-2.5 border border-emerald-600 rounded-sm flex items-center justify-center p-0.5">
+              <div className="w-1 h-1 rounded-full bg-emerald-600"></div>
             </div>
-            <span className="text-[9px] font-black text-emerald-800 uppercase tracking-wide">
-              100% Pure & Veg
+            <span className="text-[8px] sm:text-[9px] font-black text-emerald-800 uppercase tracking-wide">
+              100% Pure
             </span>
           </div>
 
-          <div className="absolute bottom-3 right-3 bg-teal-900/90 backdrop-blur-sm text-amber-300 text-[11px] font-black px-3 py-1 rounded-full border border-teal-600 shadow-md">
-            {weight}
-          </div>
+          {weight && (
+            <div className="absolute bottom-2 right-2 bg-teal-900/90 backdrop-blur-sm text-amber-300 text-[10px] sm:text-[11px] font-black px-2.5 py-0.5 rounded-full border border-teal-600 shadow-md">
+              {weight}
+            </div>
+          )}
         </div>
 
-        <div className="p-3 bg-teal-900 text-white flex items-center justify-between text-xs">
-          <span className="font-black text-amber-300 line-clamp-1">{productName}</span>
-          <span className="text-[10px] text-teal-200 uppercase font-bold tracking-wider shrink-0 ml-2">
-            Authentic Quality
-          </span>
-        </div>
+        {!isCompact && (
+          <div className="p-3 bg-teal-900 text-white flex items-center justify-between text-xs">
+            <span className="font-black text-amber-300 line-clamp-1">{productName}</span>
+            <span className="text-[10px] text-teal-200 uppercase font-bold tracking-wider shrink-0 ml-2">
+              Authentic Quality
+            </span>
+          </div>
+        )}
       </div>
     );
   }

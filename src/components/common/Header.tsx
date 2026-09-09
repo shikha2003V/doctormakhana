@@ -76,16 +76,15 @@ export const Header: React.FC = () => {
               <Phone className="w-3 h-3 text-amber-300" />
               +91 76490 90402
             </a>
-            <button
-              onClick={() => setActivePage('admin')}
-              className={`px-2.5 py-0.5 rounded text-[11px] font-bold border transition-colors flex items-center gap-1 ${
-                isAdminAuthenticated
-                  ? 'bg-amber-400 text-teal-950 border-amber-300 shadow-sm'
-                  : 'bg-white/15 hover:bg-white/25 text-white border-white/20'
-              }`}
-            >
-              {isAdminAuthenticated ? 'Owner Dashboard ●' : 'Owner Login'}
-            </button>
+            {isAdminAuthenticated && (
+              <button
+                onClick={() => setActivePage('admin')}
+                className="bg-amber-400 hover:bg-amber-300 text-teal-950 px-2.5 py-0.5 rounded text-[11px] font-bold border border-amber-300 shadow-sm transition-colors flex items-center gap-1"
+                title="Open Store Owner Dashboard"
+              >
+                Owner Dashboard ●
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -284,15 +283,17 @@ export const Header: React.FC = () => {
                 Google Drive Storage & Receipts
               </button>
 
-              <button
-                onClick={() => {
-                  setActivePage('admin');
-                  setIsMobileMenuOpen(false);
-                }}
-                className="w-full bg-amber-400 text-teal-950 font-bold py-2.5 rounded-xl text-sm shadow-sm hover:bg-amber-500"
-              >
-                Go to Admin Dashboard
-              </button>
+              {isAdminAuthenticated && (
+                <button
+                  onClick={() => {
+                    setActivePage('admin');
+                    setIsMobileMenuOpen(false);
+                  }}
+                  className="w-full bg-amber-400 text-teal-950 font-bold py-2.5 rounded-xl text-sm shadow-sm hover:bg-amber-500"
+                >
+                  Go to Admin Dashboard
+                </button>
+              )}
               <div className="text-center text-xs text-slate-500 space-y-1">
                 <p className="font-bold text-teal-800">Support Hotline:</p>
                 <p>+91 89892 14183</p>

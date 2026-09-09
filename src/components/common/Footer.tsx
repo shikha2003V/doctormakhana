@@ -187,13 +187,6 @@ export const Footer: React.FC = () => {
               >
                 Terms of Service
               </button>
-              <span>•</span>
-              <button
-                onClick={() => setActivePage('admin')}
-                className="hover:text-amber-300 text-teal-400/80 transition-colors"
-              >
-                Owner Portal
-              </button>
             </div>
           </div>
         </div>

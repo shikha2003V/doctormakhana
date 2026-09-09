@@ -21,12 +21,14 @@ import { AdminOrdersTab } from '../components/admin/AdminOrdersTab';
 export const AdminDashboard: React.FC = () => {
   const {
     isAdminAuthenticated,
+    isAdminAuthLoading,
     adminLogout,
     products,
     orders,
     reviews,
     refreshProducts,
     isDbLoading,
+    setActivePage,
   } = useStore();
 
   const [activeTab, setActiveTab] = useState<'products' | 'orders' | 'overview' | 'customers' | 'reviews'>('products');
@@ -35,9 +37,29 @@ export const AdminDashboard: React.FC = () => {
   const [isProductModalOpen, setIsProductModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
 
-  // If owner is not authenticated, display secure Admin Login
+  // If owner is not authenticated, redirect to customer account page immediately
+  React.useEffect(() => {
+    if (!isAdminAuthLoading && !isAdminAuthenticated) {
+      setActivePage('account');
+      if (typeof window !== 'undefined') {
+        window.history.replaceState(null, '', '/');
+      }
+    }
+  }, [isAdminAuthLoading, isAdminAuthenticated, setActivePage]);
+
+  if (isAdminAuthLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+        <div className="flex flex-col items-center gap-3">
+          <RefreshCw className="w-6 h-6 text-teal-700 animate-spin" />
+          <p className="text-xs font-semibold text-slate-500">Checking authorization...</p>
+        </div>
+      </div>
+    );
+  }
+
   if (!isAdminAuthenticated) {
-    return <AdminLoginForm />;
+    return null;
   }
 
   // Dashboard Stats Calculations

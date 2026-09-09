@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useStore } from '../../context/StoreContext';
 import { Product, ProductVariant } from '../../types/ecommerce';
 import {
@@ -58,10 +58,114 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
   const [highlightInput, setHighlightInput] = useState('');
 
   // Images state
-  const [customImages, setCustomImages] = useState<string[]>(productToEdit?.customImages || []);
-  const [mainImageIndex, setMainImageIndex] = useState<number>(productToEdit?.mainImageIndex || 0);
+  const [customImages, setCustomImages] = useState<string[]>([]);
+  const [mainImageIndex, setMainImageIndex] = useState<number>(0);
   const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<number | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+
+  // Synchronize modal state whenever opened or productToEdit changes
+  useEffect(() => {
+    if (!isOpen) return;
+
+    if (productToEdit) {
+      setName(productToEdit.name || '');
+      setTagline(productToEdit.tagline || 'The Crispy Taste For Health');
+      setCategory(productToEdit.category || 'Raw');
+      setWeight(productToEdit.weight || '250g');
+      setProductType(productToEdit.productType || `${productToEdit.category || 'Raw'} Makhana`);
+      setPrice(productToEdit.price ?? 399);
+      setOriginalPrice(productToEdit.originalPrice ?? (productToEdit.price ? productToEdit.price + 50 : 449));
+      setStock(productToEdit.stock !== undefined ? productToEdit.stock : 100);
+      setIsPublished(productToEdit.isPublished !== false);
+      setIsComingSoon(Boolean(productToEdit.isComingSoon));
+      setDescription(productToEdit.description || '');
+      setStorageInstructions(
+        productToEdit.storageInstructions || 'Store in a cool, dry place. Reseal tightly after opening.'
+      );
+      setIngredients(productToEdit.ingredients || '100% Handpicked Fox Nuts (Makhana).');
+      setHighlights(
+        productToEdit.highlights && productToEdit.highlights.length > 0
+          ? [...productToEdit.highlights]
+          : ['100% Natural & Vegan', 'Zero Added Preservatives', 'Rich in Protein & Calcium']
+      );
+
+      // Collect any existing images from all fields
+      const existingImgs: string[] = [];
+      if (Array.isArray(productToEdit.customImages) && productToEdit.customImages.length > 0) {
+        productToEdit.customImages.forEach((img) => {
+          if (img && typeof img === 'string' && img.trim() && !existingImgs.includes(img.trim())) {
+            existingImgs.push(img.trim());
+          }
+        });
+      }
+      if (productToEdit.imageUrl && typeof productToEdit.imageUrl === 'string' && !existingImgs.includes(productToEdit.imageUrl.trim())) {
+        existingImgs.push(productToEdit.imageUrl.trim());
+      }
+      if (
+        productToEdit.images?.front &&
+        typeof productToEdit.images.front === 'string' &&
+        (productToEdit.images.front.startsWith('http://') ||
+          productToEdit.images.front.startsWith('https://') ||
+          productToEdit.images.front.startsWith('/api/') ||
+          productToEdit.images.front.startsWith('data:')) &&
+        !existingImgs.includes(productToEdit.images.front.trim())
+      ) {
+        existingImgs.push(productToEdit.images.front.trim());
+      }
+
+      setCustomImages(existingImgs);
+      setMainImageIndex(
+        typeof productToEdit.mainImageIndex === 'number' && productToEdit.mainImageIndex < existingImgs.length
+          ? productToEdit.mainImageIndex
+          : 0
+      );
+
+      if (productToEdit.variants && productToEdit.variants.length > 0) {
+        setVariants([...productToEdit.variants]);
+      } else {
+        setVariants([
+          {
+            id: 'var-1',
+            weight: productToEdit.weight || '250g',
+            price: productToEdit.price || 399,
+            originalPrice: productToEdit.originalPrice || 449,
+            inStock: true,
+          },
+        ]);
+      }
+
+      if (productToEdit.nutritionalFacts) {
+        setNutrition({ ...productToEdit.nutritionalFacts });
+      }
+    } else {
+      // New product
+      setName('');
+      setTagline('The Crispy Taste For Health');
+      setCategory('Raw');
+      setWeight('250g');
+      setProductType('Raw Makhana');
+      setPrice(399);
+      setOriginalPrice(449);
+      setStock(100);
+      setIsPublished(true);
+      setIsComingSoon(false);
+      setDescription('');
+      setStorageInstructions('Store in a cool, dry place. Reseal tightly after opening.');
+      setIngredients('100% Handpicked Fox Nuts (Makhana).');
+      setHighlights(['100% Natural & Vegan', 'Zero Added Preservatives', 'Rich in Protein & Calcium']);
+      setCustomImages([]);
+      setMainImageIndex(0);
+      setVariants([{ id: 'var-1', weight: '250g', price: 399, originalPrice: 449, inStock: true }]);
+    }
+
+    setActiveTab('details');
+    setUploadError(null);
+    setSaveError(null);
+    setUploadProgress(null);
+  }, [isOpen, productToEdit]);
 
   // Variants state
   const [variants, setVariants] = useState<ProductVariant[]>(
@@ -92,6 +196,7 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
     if (!files || files.length === 0) return;
 
     setIsUploading(true);
+    setUploadProgress(10);
     setUploadError(null);
 
     try {
@@ -101,13 +206,18 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
           setUploadError('Only image files (PNG, JPG, WEBP) are supported.');
           continue;
         }
-        const serverUrl = await uploadProductImage(file, file.name);
-        setCustomImages((prev) => [...prev, serverUrl]);
+        const serverUrl = await uploadProductImage(file, file.name, (pct) => {
+          setUploadProgress(pct);
+        });
+        // Add new image at the front and set as main active image
+        setCustomImages((prev) => [serverUrl, ...prev.filter((url) => url !== serverUrl)]);
+        setMainImageIndex(0);
       }
     } catch (err: any) {
       setUploadError(err.message || 'Failed to upload image file');
     } finally {
       setIsUploading(false);
+      setUploadProgress(null);
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
       }
@@ -128,8 +238,8 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
     }
   };
 
-  const handleRemoveHighlight = (idx: number) => {
-    setHighlights((prev) => prev.filter((_, i) => i !== idx));
+  const handleRemoveHighlight = (index: number) => {
+    setHighlights((prev) => prev.filter((_, i) => i !== index));
   };
 
   const handleAddVariant = () => {
@@ -157,6 +267,19 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
       return;
     }
 
+    // Determine primary display image URL
+    const selectedPrimaryImage =
+      customImages.length > 0
+        ? customImages[mainImageIndex] || customImages[0]
+        : productToEdit?.imageUrl ||
+          (productToEdit?.images?.front &&
+          (productToEdit.images.front.startsWith('http://') ||
+            productToEdit.images.front.startsWith('https://') ||
+            productToEdit.images.front.startsWith('/api/') ||
+            productToEdit.images.front.startsWith('data:'))
+            ? productToEdit.images.front
+            : undefined);
+
     const payload: Product = {
       id: productToEdit ? productToEdit.id : `dm-prod-${Date.now()}`,
       name: name.trim(),
@@ -167,14 +290,15 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
       category,
       productType: productType.trim() || `${category} Makhana`,
       netQuantity: weight.trim() || '250g',
-      images: productToEdit?.images || {
-        front: 'pack-front',
-        back: 'pack-back',
-        closeup: 'pack-closeup',
-        lifestyle: 'pack-lifestyle',
+      images: {
+        front: selectedPrimaryImage || productToEdit?.images?.front || 'pack-front',
+        back: productToEdit?.images?.back || 'pack-back',
+        closeup: productToEdit?.images?.closeup || 'pack-closeup',
+        lifestyle: productToEdit?.images?.lifestyle || 'pack-lifestyle',
       },
-      customImages,
-      mainImageIndex,
+      imageUrl: selectedPrimaryImage,
+      customImages: customImages.length > 0 ? customImages : (selectedPrimaryImage ? [selectedPrimaryImage] : []),
+      mainImageIndex: customImages.length > 0 ? mainImageIndex : 0,
       stock: Number(stock),
       isPublished,
       isComingSoon,
@@ -189,16 +313,24 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
       variants: variants.length > 0 ? variants : undefined,
     };
 
-    if (productToEdit) {
-      await updateProduct(payload);
-    } else {
-      await addProduct(payload);
+    try {
+      setIsSaving(true);
+      setSaveError(null);
+      if (productToEdit) {
+        await updateProduct(payload);
+      } else {
+        await addProduct(payload);
+      }
+      onClose();
+    } catch (err: any) {
+      console.error('Failed to save product:', err);
+      setSaveError(err.message || 'Failed to persist product changes to Firebase database.');
+    } finally {
+      setIsSaving(false);
     }
-
-    onClose();
   };
 
-  const primaryImageSrc = customImages.length > 0 ? customImages[mainImageIndex] || customImages[0] : undefined;
+  const primaryImageSrc = customImages.length > 0 ? customImages[mainImageIndex] || customImages[0] : (productToEdit?.imageUrl || (productToEdit?.images?.front?.startsWith('http') || productToEdit?.images?.front?.startsWith('/api/') ? productToEdit.images.front : undefined));
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4">
@@ -476,9 +608,22 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
                 </label>
 
                 {isUploading && (
-                  <div className="flex items-center justify-center gap-2 text-xs font-bold text-teal-800">
-                    <div className="w-4 h-4 border-2 border-teal-800/30 border-t-teal-800 rounded-full animate-spin"></div>
-                    Uploading image securely...
+                  <div className="space-y-2 max-w-xs mx-auto">
+                    <div className="flex items-center justify-between text-xs font-bold text-teal-800">
+                      <span className="flex items-center gap-2">
+                        <div className="w-3.5 h-3.5 border-2 border-teal-800/30 border-t-teal-800 rounded-full animate-spin"></div>
+                        Uploading to Firebase Storage...
+                      </span>
+                      <span>{uploadProgress !== null ? `${uploadProgress}%` : ''}</span>
+                    </div>
+                    {uploadProgress !== null && (
+                      <div className="w-full bg-slate-200 rounded-full h-1.5 overflow-hidden">
+                        <div
+                          className="bg-teal-700 h-full transition-all duration-200"
+                          style={{ width: `${uploadProgress}%` }}
+                        ></div>
+                      </div>
+                    )}
                   </div>
                 )}
 
@@ -809,6 +954,12 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
             </div>
           )}
 
+          {saveError && (
+            <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-xs text-red-700 font-semibold">
+              ⚠️ {saveError}
+            </div>
+          )}
+
           {/* Modal Footer Controls */}
           <div className="pt-4 border-t border-slate-200 flex items-center justify-between">
             <span className="text-[11px] text-slate-400">
@@ -818,16 +969,22 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
               <button
                 type="button"
                 onClick={onClose}
-                className="px-4 py-2.5 border border-slate-300 text-slate-700 hover:bg-slate-100 rounded-xl text-xs font-bold"
+                disabled={isSaving}
+                className="px-4 py-2.5 border border-slate-300 text-slate-700 hover:bg-slate-100 rounded-xl text-xs font-bold disabled:opacity-50"
               >
                 Cancel
               </button>
               <button
                 type="submit"
-                className="px-6 py-2.5 bg-teal-800 hover:bg-teal-900 text-white rounded-xl text-xs font-extrabold shadow-lg flex items-center gap-1.5 cursor-pointer"
+                disabled={isSaving}
+                className="px-6 py-2.5 bg-teal-800 hover:bg-teal-900 text-white rounded-xl text-xs font-extrabold shadow-lg flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
               >
                 <Check className="w-4 h-4 text-amber-300" />
-                {productToEdit ? 'Save Changes' : 'Publish Product to Live Store'}
+                {isSaving
+                  ? 'Saving to Database...'
+                  : productToEdit
+                  ? 'Save Changes'
+                  : 'Publish Product to Live Store'}
               </button>
             </div>
           </div>

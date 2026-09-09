@@ -24,6 +24,7 @@ export interface Product {
     closeup: string;
     lifestyle: string;
   };
+  imageUrl?: string;
   stock: number;
   rating: number;
   reviewCount: number;

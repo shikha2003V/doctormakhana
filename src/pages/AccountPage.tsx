@@ -18,13 +18,25 @@ import {
 } from 'lucide-react';
 
 export const AccountPage: React.FC = () => {
-  const { user, login, logout, orders, wishlist, products, setActivePage, navigateToProduct } =
-    useStore();
+  const {
+    user,
+    login,
+    logout,
+    orders,
+    wishlist,
+    products,
+    setActivePage,
+    navigateToProduct,
+    isAdminAuthenticated,
+    adminLogin,
+  } = useStore();
 
   const [isDriveOpen, setIsDriveOpen] = useState(false);
   const [isRegisterMode, setIsRegisterMode] = useState(false);
   const [emailOrPhone, setEmailOrPhone] = useState('shikhuverma2804@gmail.com');
   const [password, setPassword] = useState('password123');
+  const [loginError, setLoginError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Registration fields
   const [regName, setRegName] = useState('');
@@ -36,9 +48,32 @@ export const AccountPage: React.FC = () => {
     'profile'
   );
 
-  const handleLoginSubmit = (e: React.FormEvent) => {
+  const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    login(emailOrPhone, emailOrPhone.includes('admin') ? 'admin' : 'customer');
+    setLoginError('');
+    setIsSubmitting(true);
+
+    const cleanInput = emailOrPhone.trim().toLowerCase();
+    const isOwnerAttempt =
+      cleanInput === 'doctormakhana@gmail.com' ||
+      cleanInput === 'admin@doctormakhana.com' ||
+      cleanInput === 'admin' ||
+      cleanInput === 'owner' ||
+      cleanInput === 'doctormakhana';
+
+    if (isOwnerAttempt) {
+      const result = await adminLogin(cleanInput, password);
+      setIsSubmitting(false);
+      if (result.success) {
+        setActivePage('admin');
+      } else {
+        setLoginError(result.error || 'Invalid admin credentials');
+      }
+      return;
+    }
+
+    login(emailOrPhone, 'customer');
+    setIsSubmitting(false);
   };
 
   const handleRegisterSubmit = (e: React.FormEvent) => {
@@ -52,7 +87,7 @@ export const AccountPage: React.FC = () => {
       user &&
       (ord.email === user.email ||
         ord.phone.includes(user.phone) ||
-        user.role === 'admin')
+        isAdminAuthenticated)
   );
 
   const wishlistedProducts = products.filter((p) => wishlist.includes(p.id));
@@ -73,26 +108,11 @@ export const AccountPage: React.FC = () => {
             </p>
           </div>
 
-          {/* Quick Demo Login Bar */}
-          <div className="bg-teal-50 p-3 rounded-2xl border border-teal-200 text-center space-y-2">
-            <span className="text-[10px] font-extrabold uppercase text-teal-800 block">
-              Quick One-Click Demo Login:
-            </span>
-            <div className="flex gap-2">
-              <button
-                onClick={() => login('shikhuverma2804@gmail.com', 'customer')}
-                className="flex-1 bg-teal-700 text-white text-[11px] font-bold py-2 rounded-xl shadow hover:bg-teal-800"
-              >
-                Login as Customer
-              </button>
-              <button
-                onClick={() => login('admin@doctormakhana.com', 'admin')}
-                className="flex-1 bg-amber-400 text-teal-950 text-[11px] font-black py-2 rounded-xl shadow hover:bg-amber-300"
-              >
-                Login as Admin
-              </button>
+          {loginError && (
+            <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-xs text-red-700 font-medium">
+              {loginError}
             </div>
-          </div>
+          )}
 
           {!isRegisterMode ? (
             /* Login Form */
@@ -253,7 +273,7 @@ export const AccountPage: React.FC = () => {
             <div>
               <div className="flex items-center gap-2">
                 <h1 className="text-2xl font-black">{user.fullName}</h1>
-                {user.role === 'admin' && (
+                {isAdminAuthenticated && (
                   <span className="bg-amber-400 text-teal-950 font-black text-[10px] uppercase px-2 py-0.5 rounded">
                     Admin
                   </span>
@@ -264,7 +284,7 @@ export const AccountPage: React.FC = () => {
           </div>
 
           <div className="flex items-center gap-3">
-            {user.role === 'admin' && (
+            {isAdminAuthenticated && (
               <button
                 onClick={() => setActivePage('admin')}
                 className="bg-amber-400 hover:bg-amber-300 text-teal-950 font-black px-4 py-2.5 rounded-xl text-xs shadow"

@@ -1,0 +1,360 @@
+[
+  {
+    "stock": 0,
+    "nutritionalFacts": {
+      "carbohydrates": "74.2 g",
+      "dietaryFiber": "7.3 g",
+      "protein": "9.3 g",
+      "transFat": "0.0 g",
+      "sugar": "0.0 g",
+      "fat": "4.8 g",
+      "energy": "378 kcal"
+    },
+    "originalPrice": 349,
+    "weight": "250g",
+    "packageIncludes": "1 × Doctor Makhana Pudina Punch (250g)",
+    "productType": "Mint Flavored Roasted Fox Nuts",
+    "isPublished": true,
+    "images": {
+      "closeup": "pack-closeup",
+      "lifestyle": "pack-lifestyle",
+      "front": "pack-front",
+      "back": "pack-back"
+    },
+    "rating": 4.6,
+    "isBestSeller": false,
+    "netQuantity": "250g",
+    "badge": "Coming Soon",
+    "price": 289,
+    "isComingSoon": true,
+    "storageInstructions": "Store in a cool and dry place. Reseal after opening.",
+    "highlights": [
+      "Flavored Variant — Launching Soon",
+      "Garden Fresh Mint Seasoning",
+      "Cool & Savory Crunch",
+      "Zero Trans Fat",
+      "FSSAI Certified: Lic. No. 21426170000308"
+    ],
+    "id": "dm-mint-pudina-250g",
+    "description": "Refreshing garden mint with savory rock salt. A refreshing, cool, crunchy midday snack currently formulated for perfection. Launching soon at Doctor Makhana store.",
+    "category": "Flavored",
+    "name": "Doctor Makhana Pudina Punch – 250g",
+    "ingredients": "Fox Nuts, Olive Oil, Mint Leaf Powder, Himalayan Salt",
+    "tagline": "Refreshing Mint Infused Crunch",
+    "isNew": true,
+    "reviewCount": 24
+  },
+  {
+    "ingredients": "Fox Nuts, Olive Oil, Chili, Garlic, Onion, Black Pepper, Himalayan Salt, Citric Acid",
+    "tagline": "Spicy Tangy Gourmet Snacking",
+    "reviewCount": 48,
+    "price": 429,
+    "badge": "Coming Soon",
+    "packageIncludes": "1 × Doctor Makhana Peri Peri Makhana (250g)",
+    "name": "Doctor Makhana Peri Peri Makhana",
+    "description": "Infused with zesty African Bird’s Eye Chilli peri-peri spices. Doctor Makhana Peri Peri Makhana is the ultimate mouthwatering snack for spice lovers who don’t want to compromise on health.",
+    "stock": 0,
+    "nutritionalFacts": {
+      "dietaryFiber": "7.2 g",
+      "energy": "385 kcal",
+      "sugar": "0.5 g",
+      "transFat": "0.0 g",
+      "carbohydrates": "73.5 g",
+      "fat": "5.2 g",
+      "protein": "9.4 g"
+    },
+    "isPublished": true,
+    "productType": "Flavoured Makhana",
+    "storageInstructions": "Keep in a cool, dark, dry place. Avoid direct sunlight.",
+    "isNew": true,
+    "highlights": [
+      "Flavored Variant — Launching Soon",
+      "Doctor Makhana Flavoured Range",
+      "Zesty & Zippy Peri Peri Spice Mix",
+      "High Protein & Zero Trans Fat",
+      "FSSAI Certified: Lic. No. 21426170000308"
+    ],
+    "netQuantity": "250g",
+    "images": {
+      "front": "pack-front",
+      "closeup": "pack-closeup",
+      "lifestyle": "pack-lifestyle",
+      "back": "pack-back"
+    },
+    "rating": 4.9,
+    "id": "dm-peri-peri-250g",
+    "originalPrice": 499,
+    "isBestSeller": false,
+    "category": "Flavored",
+    "weight": "250g",
+    "isComingSoon": true
+  },
+  {
+    "customImages": [
+      "/api/images/img_1788863137539_eafc878a",
+      "/api/images/img_1788863143526_36781546",
+      "/api/images/img_1788863153599_2de77ddd",
+      "/api/images/img_1788863161706_6335082c"
+    ],
+    "isComingSoon": false,
+    "mainImageIndex": 0,
+    "rating": 4.9,
+    "packageIncludes": "1 × Doctor Makhana Premium Raw Fox Nuts – 250g",
+    "isNew": true,
+    "originalPrice": 416,
+    "id": "dm-raw-100g",
+    "variants": [
+      {
+        "originalPrice": 449,
+        "inStock": true,
+        "price": 399,
+        "id": "var-1",
+        "weight": "250g"
+      }
+    ],
+    "productType": "Raw Makhana",
+    "reviewCount": 112,
+    "storageInstructions": "Store in a cool, dry place. Reseal tightly after opening.",
+    "weight": "250gm",
+    "imageUrl": "/api/images/img_1788863137539_eafc878a",
+    "netQuantity": "250gm",
+    "tagline": "The Crispy Taste For Health",
+    "isBestSeller": false,
+    "nutritionalFacts": {
+      "transFat": "0.0 g",
+      "protein": "9.7 g",
+      "fat": "0.1 g",
+      "dietaryFiber": "7.6 g",
+      "sugar": "0.0 g",
+      "carbohydrates": "76.9 g",
+      "energy": "350 kcal"
+    },
+    "name": "Doctor Makhana Premium Raw Fox Nuts – 250g",
+    "highlights": [
+      "100% Natural & Vegan",
+      "Zero Added Preservatives",
+      "Rich in Protein & Calcium"
+    ],
+    "stock": 85,
+    "badge": "100g Pack",
+    "description": "**Doctor Makhana – Premium Fox Nuts**\nEnjoy the light, crispy and nutritious goodness of premium Makhana (Fox Nuts). A naturally wholesome snack that is perfect for everyday munching. Rich in protein and dietary fibre, and naturally gluten-free, Doctor Makhana is a smart choice for health-conscious snacking.\n\n**Highlights:**\n• Premium Quality Makhana\n• Rich in Protein\n• Good Source of Dietary Fibre\n• Gluten Free\n• 100% Natural\n• No Preservatives\n• Light & Crispy Snack\n• Perfect for Everyday Snacking",
+    "images": {
+      "lifestyle": "pack-lifestyle",
+      "closeup": "pack-closeup",
+      "front": "/api/images/img_1788863137539_eafc878a",
+      "back": "pack-back"
+    },
+    "price": 239,
+    "category": "Raw",
+    "isPublished": true,
+    "ingredients": "100% Handpicked Fox Nuts (Makhana)."
+  },
+  {
+    "isBestSeller": false,
+    "customImages": [],
+    "price": 199,
+    "badge": "200g Pack",
+    "category": "Raw",
+    "highlights": [
+      "100% Premium Quality Hand-Picked Fox Nuts",
+      "Convenient 200g Moisture-Proof Sealed Pouch",
+      "Rich in Protein & Dietary Fiber",
+      "93.6% Essential Amino Acid Index Score",
+      "100% Gluten Free & Zero Trans-Fat",
+      "FSSAI Certified: Lic. No. 21426170000308"
+    ],
+    "name": "Doctor Makhana Premium Raw Fox Nuts – 200g",
+    "stock": 95,
+    "ingredients": "100% Raw Premium Phool Makhana (Fox Nuts / Lotus Seeds)",
+    "tagline": "The Crispy Taste For Health",
+    "id": "dm-raw-200g",
+    "isPublished": true,
+    "nutritionalFacts": {
+      "fat": "0.1 g",
+      "transFat": "0.0 g",
+      "sugar": "0.0 g",
+      "energy": "350 kcal",
+      "carbohydrates": "77.0 g",
+      "protein": "9.7 g",
+      "dietaryFiber": "7.6 g"
+    },
+    "weight": "200gm",
+    "mainImageIndex": 0,
+    "originalPrice": 345,
+    "description": "Doctor Makhana Premium Raw Fox Nuts (200g) sealed fresh in moisture-proof pouch to deliver maximum crispiness and health benefits. 100% natural and pure lotus seeds.",
+    "isComingSoon": false,
+    "storageInstructions": "Store in a cool and dry place. Keep away from moisture. After opening, store in an airtight container to preserve crispness.",
+    "reviewCount": 128,
+    "isNew": true,
+    "packageIncludes": "1 × Doctor Makhana Premium Raw Fox Nuts – 200g",
+    "images": {
+      "closeup": "pack-closeup",
+      "lifestyle": "pack-lifestyle",
+      "back": "pack-back",
+      "front": "pack-front"
+    },
+    "rating": 4.9,
+    "variants": [
+      {
+        "weight": "200g",
+        "originalPrice": 420,
+        "id": "var-1",
+        "inStock": true,
+        "price": 379
+      }
+    ],
+    "productType": "Doctor Makhana",
+    "netQuantity": "200gm"
+  },
+  {
+    "netQuantity": "100gm",
+    "category": "Raw",
+    "productType": "Doctor Makhana",
+    "isComingSoon": false,
+    "badge": "Available Now (250g)",
+    "price": 129,
+    "name": "Doctor Makhana Premium Raw Fox Nuts – 100gm",
+    "description": "Doctor Makhana Premium Raw Fox Nuts (250g) are carefully selected for their jumbo size, crisp texture, and natural purity. 100% natural, gluten free, rich in protein, fiber and calcium with a 93.6% essential amino acid index.",
+    "highlights": [
+      "100% Premium Quality Hand-Picked Fox Nuts",
+      "Authentic 250g Moisture-Proof Sealed Pouch",
+      "Rich in Protein (9.7g) & Dietary Fiber (7.6g)",
+      "93.6% Essential Amino Acid Index Score",
+      "100% Gluten Free & Zero Trans-Fat",
+      "FSSAI Certified: Lic. No. 21426170000308"
+    ],
+    "storageInstructions": "Store in a cool and dry place. Keep away from moisture. After opening, store in an airtight container to preserve crispness.",
+    "reviewCount": 154,
+    "rating": 4.9,
+    "images": {
+      "closeup": "pack-closeup",
+      "lifestyle": "pack-lifestyle",
+      "front": "/api/images/img_1788866347992_dbbad392",
+      "back": "pack-back"
+    },
+    "stock": 120,
+    "originalPrice": 249,
+    "isNew": false,
+    "packageIncludes": "1 × Doctor Makhana Premium Raw Fox Nuts – 100gm",
+    "imageUrl": "/api/images/img_1788866347992_dbbad392",
+    "isPublished": true,
+    "mainImageIndex": 0,
+    "customImages": [
+      "/api/images/img_1788866347992_dbbad392"
+    ],
+    "isBestSeller": true,
+    "weight": "100gm",
+    "variants": [
+      {
+        "weight": "250g",
+        "inStock": true,
+        "id": "var-1",
+        "price": 399,
+        "originalPrice": 449
+      }
+    ],
+    "id": "dm-raw-250g",
+    "ingredients": "100% Raw Premium Phool Makhana (Fox Nuts / Lotus Seeds)",
+    "nutritionalFacts": {
+      "energy": "350 kcal",
+      "carbohydrates": "77.0 g",
+      "dietaryFiber": "7.6 g",
+      "sugar": "0.0 g",
+      "transFat": "0.0 g",
+      "fat": "0.1 g",
+      "protein": "9.7 g"
+    },
+    "tagline": "The Crispy Taste For Health"
+  },
+  {
+    "productType": "Twin Pack (2 × 250g Sealed Pouches)",
+    "id": "dm-raw-2x250g",
+    "isPublished": true,
+    "netQuantity": "500g (2 × 250g Pouches)",
+    "originalPrice": 898,
+    "packageIncludes": "2 × Doctor Makhana 250g Sealed Packets (Total 500g)",
+    "price": 789,
+    "badge": "Twin Pack Saver",
+    "category": "Combo",
+    "stock": 50,
+    "highlights": [
+      "2 × 250g Individual Sealed Freshness Pouches",
+      "Total 500g Net Weight of Jumbo Fox Nuts",
+      "Preserves Crispness: Open one pouch while keeping the second airtight",
+      "Rich in Protein & Dietary Fiber",
+      "100% Gluten Free & FSSAI Certified",
+      "FSSAI Lic. No. 21426170000308"
+    ],
+    "nutritionalFacts": {
+      "dietaryFiber": "7.6 g",
+      "protein": "9.7 g",
+      "transFat": "0.0 g",
+      "carbohydrates": "77.0 g",
+      "sugar": "0.0 g",
+      "energy": "350 kcal",
+      "fat": "0.1 g"
+    },
+    "name": "Doctor Makhana Premium Raw Fox Nuts (Twin Pack: 2 × 250g)",
+    "isBestSeller": false,
+    "storageInstructions": "Keep sealed pouches in a cool and dry place away from sunlight.",
+    "isComingSoon": false,
+    "ingredients": "100% Raw Premium Phool Makhana (Fox Nuts / Lotus Seeds)",
+    "isNew": true,
+    "weight": "500g (2 × 250g)",
+    "reviewCount": 96,
+    "tagline": "Dual Freshness Twin Pack",
+    "description": "Doctor Makhana Twin Saver Pack delivers two individually sealed 250g moisture-proof pouches (total 500g) to ensure maximum freshness across each pouch. 100% natural and pure lotus seeds.",
+    "images": {
+      "front": "pack-front",
+      "lifestyle": "pack-lifestyle",
+      "back": "pack-back",
+      "closeup": "pack-closeup"
+    },
+    "rating": 4.95
+  },
+  {
+    "isBestSeller": false,
+    "description": "Slow roasted to golden crunchy perfection with light seasoning. Doctor Makhana Roasted Makhana is a ready-to-eat guilt-free snack packed with high plant protein, dietary fiber, and zero trans fat.",
+    "isComingSoon": true,
+    "isNew": true,
+    "originalPrice": 480,
+    "name": "Doctor Makhana Roasted Makhana",
+    "id": "dm-roasted-salted-250g",
+    "ingredients": "Premium Fox Nuts, Olive Oil, Pink Himalayan Salt",
+    "reviewCount": 56,
+    "highlights": [
+      "Flavored Variant — Launching Soon",
+      "Doctor Makhana Flavoured Range",
+      "Slow Roasted for Supreme Crunch",
+      "Zero Trans Fat & High Fiber",
+      "FSSAI Certified: Lic. No. 21426170000308"
+    ],
+    "packageIncludes": "1 × Doctor Makhana Roasted Makhana (250g)",
+    "badge": "Coming Soon",
+    "price": 418,
+    "weight": "250g",
+    "storageInstructions": "Store in a cool and dry place. Keep away from direct sunlight.",
+    "tagline": "Slow Roasted Crunchy Fox Nuts",
+    "category": "Flavored",
+    "productType": "Flavoured Makhana",
+    "stock": 0,
+    "isPublished": true,
+    "nutritionalFacts": {
+      "sugar": "0.0 g",
+      "carbohydrates": "74.0 g",
+      "fat": "4.5 g",
+      "protein": "9.5 g",
+      "dietaryFiber": "7.4 g",
+      "energy": "375 kcal",
+      "transFat": "0.0 g"
+    },
+    "netQuantity": "250g",
+    "images": {
+      "front": "pack-front",
+      "back": "pack-back",
+      "lifestyle": "pack-lifestyle",
+      "closeup": "pack-closeup"
+    },
+    "rating": 4.8
+  }
+]

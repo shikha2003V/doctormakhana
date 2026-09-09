@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useStore } from '../context/StoreContext';
 import { ProductPackGraphic } from '../components/common/ProductPackGraphic';
+import { getProductDisplayImage } from '../utils/productUtils';
 import {
   Search,
   Filter,
@@ -194,6 +195,7 @@ export const ShopPage: React.FC = () => {
                       weight={product.weight}
                       price={product.price}
                       productName={product.name}
+                      customImageSrc={getProductDisplayImage(product)}
                       className="w-full h-auto max-w-[190px] group-hover:scale-105 transition-transform"
                     />
                   </div>

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useStore } from '../context/StoreContext';
 import { ProductPackGraphic } from '../components/common/ProductPackGraphic';
+import { getProductDisplayImage } from '../utils/productUtils';
 import {
   Trash2,
   Plus,
@@ -154,6 +155,8 @@ export const CartPage: React.FC = () => {
                           type="front"
                           weight={item.product.weight}
                           price={item.product.price}
+                          productName={item.product.name}
+                          customImageSrc={getProductDisplayImage(item.product)}
                           className="w-full h-full object-cover group-hover:scale-105 transition-transform"
                         />
                       </button>
@@ -409,6 +412,8 @@ export const CartDrawer: React.FC = () => {
                     type="front"
                     weight={item.product.weight}
                     price={item.product.price}
+                    productName={item.product.name}
+                    customImageSrc={getProductDisplayImage(item.product)}
                     className="w-full h-full object-cover"
                   />
                 </button>

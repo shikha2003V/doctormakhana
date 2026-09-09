@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useStore } from '../context/StoreContext';
 import { ProductPackGraphic } from '../components/common/ProductPackGraphic';
+import { getProductDisplayImage } from '../utils/productUtils';
 import {
   doctorMakhanaPackagingReal,
   doctorMakhanaFront,
@@ -119,6 +120,11 @@ export const ProductDetailPage: React.FC = () => {
                 weight={product.weight}
                 price={product.price}
                 productName={product.name}
+                customImageSrc={
+                  selectedView === 'front' || selectedView === 'real'
+                    ? getProductDisplayImage(product)
+                    : undefined
+                }
                 className="w-full h-auto max-w-xs shadow-xl"
               />
 
@@ -139,9 +145,9 @@ export const ProductDetailPage: React.FC = () => {
             {/* Gallery Views Switcher with Rich Thumbnails */}
             <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
               {[
-                { id: 'real', label: 'Packaging', img: doctorMakhanaPackagingReal },
+                { id: 'real', label: 'Packaging', img: getProductDisplayImage(product) || doctorMakhanaPackagingReal },
                 { id: 'kitchen', label: 'Bowl Setup', img: doctorMakhanaLifestyleKitchen },
-                { id: 'front', label: 'Front Pack', img: doctorMakhanaFront },
+                { id: 'front', label: 'Front Pack', img: getProductDisplayImage(product) || doctorMakhanaFront },
                 { id: 'poster', label: 'Poster Facts', img: doctorMakhanaPosterFacts },
                 { id: 'back', label: 'Back Panel', img: doctorMakhanaBack },
                 { id: 'closeup', label: 'Close-Up', img: doctorMakhanaCloseup },
@@ -708,6 +714,8 @@ export const ProductDetailPage: React.FC = () => {
                       type="front"
                       weight={rel.weight}
                       price={rel.price}
+                      productName={rel.name}
+                      customImageSrc={getProductDisplayImage(rel)}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform"
                     />
                   </div>

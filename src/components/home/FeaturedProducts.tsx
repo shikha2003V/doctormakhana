@@ -1,6 +1,7 @@
 import React from 'react';
 import { useStore } from '../../context/StoreContext';
 import { ProductPackGraphic } from '../common/ProductPackGraphic';
+import { getProductDisplayImage } from '../../utils/productUtils';
 import { Star, ShoppingBag, ArrowRight, Heart } from 'lucide-react';
 
 export const FeaturedProducts: React.FC = () => {
@@ -85,6 +86,7 @@ export const FeaturedProducts: React.FC = () => {
                     weight={product.weight}
                     price={product.price}
                     productName={product.name}
+                    customImageSrc={getProductDisplayImage(product)}
                     className="w-full h-auto max-w-[200px]"
                   />
                 </div>

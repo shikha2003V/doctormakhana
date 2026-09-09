@@ -15,6 +15,7 @@ import {
   Sparkles,
 } from 'lucide-react';
 import { ProductPackGraphic } from '../common/ProductPackGraphic';
+import { getProductDisplayImage } from '../../utils/productUtils';
 
 interface AdminProductsTabProps {
   onOpenAdd: () => void;
@@ -153,10 +154,7 @@ export const AdminProductsTab: React.FC<AdminProductsTabProps> = ({
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredProducts.map((p) => {
           const isLive = p.isPublished !== false;
-          const imageSrc =
-            p.customImages && p.customImages.length > 0
-              ? p.customImages[p.mainImageIndex || 0] || p.customImages[0]
-              : undefined;
+          const imageSrc = getProductDisplayImage(p);
 
           return (
             <div

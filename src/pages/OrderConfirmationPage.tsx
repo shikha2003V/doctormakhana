@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { useStore } from '../context/StoreContext';
-import { ProductPackGraphic } from '../components/common/ProductPackGraphic';
 import { GoogleDriveManager } from '../components/common/GoogleDriveManager';
 import {
   CheckCircle,

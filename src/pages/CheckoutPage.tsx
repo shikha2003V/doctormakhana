@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useStore } from '../context/StoreContext';
 import { ProductPackGraphic } from '../components/common/ProductPackGraphic';
+import { getProductDisplayImage } from '../utils/productUtils';
 import {
   ShieldCheck,
   Truck,
@@ -583,6 +584,8 @@ export const CheckoutPage: React.FC = () => {
                           type="front"
                           weight={item.product.weight}
                           price={item.product.price}
+                          productName={item.product.name}
+                          customImageSrc={getProductDisplayImage(item.product)}
                           className="w-full h-full object-cover"
                         />
                       </div>

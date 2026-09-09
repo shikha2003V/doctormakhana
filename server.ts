@@ -1,5 +1,6 @@
 import express, { Request, Response, NextFunction } from 'express';
 import path from 'path';
+import fs from 'fs';
 import crypto from 'crypto';
 import dotenv from 'dotenv';
 import { createServer as createViteServer } from 'vite';
@@ -15,6 +16,7 @@ import {
   getCategories,
   addCategory,
   saveUploadedImage,
+  getUploadedImage,
   authenticateAdmin,
   verifyAdminToken,
   revokeAdminToken,
@@ -22,7 +24,9 @@ import {
 
 dotenv.config();
 
-const PORT = Number(process.env.PORT) || 3000;
+// AI Studio requires port 3000 behind its reverse proxy (detected via APPLET_ID).
+// Render and cloud platforms inject process.env.PORT (typically 10000 on Render).
+const PORT = process.env.APPLET_ID ? 3000 : (Number(process.env.PORT) || 3000);
 
 async function startServer() {
   const app = express();
@@ -31,8 +35,15 @@ async function startServer() {
   app.use(express.json({ limit: '50mb' }));
   app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
-  // Serve static uploaded product images
+  // Serve static uploaded product images (ensure directory exists)
   const uploadsDir = path.join(process.cwd(), 'uploads');
+  if (!fs.existsSync(uploadsDir)) {
+    try {
+      fs.mkdirSync(uploadsDir, { recursive: true });
+    } catch {
+      // Ignore if cannot create
+    }
+  }
   app.use('/uploads', express.static(uploadsDir));
 
   // Admin Auth Middleware
@@ -111,9 +122,9 @@ async function startServer() {
 
   // ================= PRODUCT CATALOG APIS =================
   // Public (or admin if include_drafts is requested)
-  app.get('/api/products', (req, res) => {
+  app.get('/api/products', async (req, res) => {
     try {
-      const products = getProducts();
+      const products = await getProducts();
       const includeDrafts = req.query.include_drafts === 'true';
 
       // If drafts requested, check if requester is admin
@@ -135,14 +146,14 @@ async function startServer() {
   });
 
   // Add new product (Admin only)
-  app.post('/api/products', requireAdminAuth, (req, res) => {
+  app.post('/api/products', requireAdminAuth, async (req, res) => {
     try {
       const productData = req.body;
       if (!productData || !productData.name || productData.price === undefined) {
         return res.status(400).json({ error: 'Product name and price are required' });
       }
 
-      const created = addProduct(productData);
+      const created = await addProduct(productData);
       res.status(201).json({ success: true, product: created });
     } catch (err: any) {
       console.error('Add product error:', err);
@@ -151,11 +162,11 @@ async function startServer() {
   });
 
   // Update product (Admin only)
-  app.put('/api/products/:id', requireAdminAuth, (req, res) => {
+  app.put('/api/products/:id', requireAdminAuth, async (req, res) => {
     try {
       const { id } = req.params;
       const updates = req.body;
-      const updated = updateProduct(id, updates);
+      const updated = await updateProduct(id, updates);
       if (!updated) {
         return res.status(404).json({ error: `Product with ID ${id} not found` });
       }
@@ -167,10 +178,10 @@ async function startServer() {
   });
 
   // Delete product (Admin only)
-  app.delete('/api/products/:id', requireAdminAuth, (req, res) => {
+  app.delete('/api/products/:id', requireAdminAuth, async (req, res) => {
     try {
       const { id } = req.params;
-      const deleted = deleteProduct(id);
+      const deleted = await deleteProduct(id);
       if (!deleted) {
         return res.status(404).json({ error: `Product with ID ${id} not found` });
       }
@@ -182,10 +193,10 @@ async function startServer() {
   });
 
   // Toggle publish / draft (Admin only)
-  app.patch('/api/products/:id/toggle-publish', requireAdminAuth, (req, res) => {
+  app.patch('/api/products/:id/toggle-publish', requireAdminAuth, async (req, res) => {
     try {
       const { id } = req.params;
-      const product = toggleProductPublish(id);
+      const product = await toggleProductPublish(id);
       if (!product) {
         return res.status(404).json({ error: `Product with ID ${id} not found` });
       }
@@ -196,14 +207,14 @@ async function startServer() {
     }
   });
 
-  // Upload product image (Admin only) - Exact binary preservation
-  app.post('/api/upload', requireAdminAuth, (req, res) => {
+  // Upload product image (Admin only) - Permanent cloud persistence
+  app.post('/api/upload', requireAdminAuth, async (req, res) => {
     try {
       const { image, filename } = req.body;
       if (!image) {
         return res.status(400).json({ error: 'Image data is required' });
       }
-      const fileUrl = saveUploadedImage(image, filename || 'product_image.jpg');
+      const fileUrl = await saveUploadedImage(image, filename || 'product_image.jpg');
       res.json({ success: true, url: fileUrl });
     } catch (err: any) {
       console.error('Upload image error:', err);
@@ -211,11 +222,34 @@ async function startServer() {
     }
   });
 
+  // Permanent image retrieval from database
+  app.get('/api/images/:id', async (req, res) => {
+    try {
+      const { id } = req.params;
+      const imgRecord = await getUploadedImage(id);
+      if (!imgRecord || !imgRecord.data) {
+        return res.status(404).send('Image not found');
+      }
+      const matches = imgRecord.data.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
+      if (matches && matches.length === 3) {
+        const mimeType = matches[1];
+        const buffer = Buffer.from(matches[2], 'base64');
+        res.setHeader('Content-Type', mimeType);
+        res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+        return res.send(buffer);
+      }
+      return res.status(400).send('Invalid image data');
+    } catch (err) {
+      console.error('Error serving image:', err);
+      res.status(500).send('Error loading image');
+    }
+  });
+
   // ================= ORDER MANAGEMENT APIS =================
   // Get all orders (Admin only)
-  app.get('/api/orders', requireAdminAuth, (req, res) => {
+  app.get('/api/orders', requireAdminAuth, async (req, res) => {
     try {
-      const orders = getOrders();
+      const orders = await getOrders();
       res.json(orders);
     } catch (err: any) {
       console.error('Get orders error:', err);
@@ -224,13 +258,13 @@ async function startServer() {
   });
 
   // Create order (Customer checkout)
-  app.post('/api/orders', (req, res) => {
+  app.post('/api/orders', async (req, res) => {
     try {
       const orderData = req.body;
       if (!orderData || !orderData.id || !orderData.items) {
         return res.status(400).json({ error: 'Invalid order details' });
       }
-      const created = addOrder(orderData);
+      const created = await addOrder(orderData);
       res.status(201).json({ success: true, order: created });
     } catch (err: any) {
       console.error('Add order error:', err);
@@ -239,14 +273,14 @@ async function startServer() {
   });
 
   // Update order status (Admin only)
-  app.patch('/api/orders/:id/status', requireAdminAuth, (req, res) => {
+  app.patch('/api/orders/:id/status', requireAdminAuth, async (req, res) => {
     try {
       const { id } = req.params;
       const { status } = req.body;
       if (!status) {
         return res.status(400).json({ error: 'New order status is required' });
       }
-      const updated = updateOrderStatus(id, status);
+      const updated = await updateOrderStatus(id, status);
       if (!updated) {
         return res.status(404).json({ error: `Order with ID ${id} not found` });
       }
@@ -258,14 +292,14 @@ async function startServer() {
   });
 
   // ================= CATEGORIES APIS =================
-  app.get('/api/categories', (req, res) => {
-    res.json(getCategories());
+  app.get('/api/categories', async (req, res) => {
+    res.json(await getCategories());
   });
 
-  app.post('/api/categories', requireAdminAuth, (req, res) => {
+  app.post('/api/categories', requireAdminAuth, async (req, res) => {
     const { name } = req.body;
     if (!name) return res.status(400).json({ error: 'Category name is required' });
-    const cats = addCategory(name);
+    const cats = await addCategory(name);
     res.json({ success: true, categories: cats });
   });
 
@@ -400,17 +434,31 @@ async function startServer() {
     }
   });
 
-  // Vite middleware for development
-  if (process.env.NODE_ENV !== 'production') {
+  // Production vs development determination:
+  // In production (Render, Cloud Run, node dist/server.cjs), serve built frontend from dist
+  const isProduction =
+    process.env.NODE_ENV === 'production' ||
+    Boolean(process.env.RENDER) ||
+    process.env.npm_lifecycle_event === 'start' ||
+    (typeof __filename !== 'undefined' && __filename.includes('dist'));
+
+  if (!isProduction) {
     const vite = await createViteServer({
       server: { middlewareMode: true },
       appType: 'spa',
     });
     app.use(vite.middlewares);
   } else {
-    const distPath = path.join(process.cwd(), 'dist');
+    const distPath = fs.existsSync(path.join(process.cwd(), 'dist', 'index.html'))
+      ? path.join(process.cwd(), 'dist')
+      : (typeof __dirname !== 'undefined' ? __dirname : path.join(process.cwd(), 'dist'));
+
     app.use(express.static(distPath));
-    app.get('*', (req, res) => {
+
+    app.get('*', (req: Request, res: Response) => {
+      if (req.path.startsWith('/api')) {
+        return res.status(404).json({ error: 'API endpoint not found' });
+      }
       res.sendFile(path.join(distPath, 'index.html'));
     });
   }

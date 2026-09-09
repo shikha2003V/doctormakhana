@@ -1,4 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { db } from '../lib/firebase';
+import { collection, onSnapshot } from 'firebase/firestore';
+import { uploadProductImageToStorage } from '../services/imageStorage';
 import {
   Product,
   CartItem,
@@ -15,6 +18,50 @@ import {
   INITIAL_ORDERS,
   INITIAL_REVIEWS,
 } from '../data/initialData';
+
+async function compressImageIfNeeded(fileOrBase64: File | string): Promise<string> {
+  if (typeof window === 'undefined') return typeof fileOrBase64 === 'string' ? fileOrBase64 : '';
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => {
+      const maxDim = 1200;
+      let width = img.width;
+      let height = img.height;
+      if (width > maxDim || height > maxDim) {
+        if (width > height) {
+          height = Math.round((height * maxDim) / width);
+          width = maxDim;
+        } else {
+          width = Math.round((width * maxDim) / height);
+          height = maxDim;
+        }
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        ctx.drawImage(img, 0, 0, width, height);
+        resolve(canvas.toDataURL('image/jpeg', 0.85));
+      } else {
+        resolve(typeof fileOrBase64 === 'string' ? fileOrBase64 : img.src);
+      }
+    };
+    img.onerror = () => {
+      if (typeof fileOrBase64 === 'string') resolve(fileOrBase64);
+    };
+
+    if (fileOrBase64 instanceof File) {
+      const reader = new FileReader();
+      reader.onload = () => {
+        img.src = reader.result as string;
+      };
+      reader.readAsDataURL(fileOrBase64);
+    } else {
+      img.src = fileOrBase64;
+    }
+  });
+}
 
 type PageRoute =
   | 'home'
@@ -75,13 +122,18 @@ interface StoreContextType {
   updateProduct: (product: Product) => Promise<void> | void;
   deleteProduct: (productId: string) => Promise<void> | void;
   togglePublishProduct: (productId: string) => Promise<void>;
-  uploadProductImage: (fileOrBase64: File | string, filename?: string) => Promise<string>;
+  uploadProductImage: (
+    fileOrBase64: File | string,
+    filename?: string,
+    onProgress?: (percent: number) => void
+  ) => Promise<string>;
   refreshProducts: () => Promise<void>;
   isDbLoading: boolean;
 
   // Admin & Persistent Backend
   adminToken: string | null;
   isAdminAuthenticated: boolean;
+  isAdminAuthLoading: boolean;
   adminLogin: (emailOrUser: string, pass: string) => Promise<{ success: boolean; error?: string }>;
   adminLogout: () => Promise<void>;
 
@@ -124,7 +176,31 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
   // Navigation & Page State
-  const [activePage, setActivePage] = useState<PageRoute>('home');
+  const getInitialRoute = (): PageRoute => {
+    if (typeof window !== 'undefined') {
+      const pathname = window.location.pathname.replace(/^\/+/, '').toLowerCase();
+      const hash = window.location.hash.replace(/^#\/?/, '').toLowerCase();
+      const target = pathname || hash;
+      if (target === 'admin') {
+        if (localStorage.getItem('dm_admin_token')) {
+          return 'admin';
+        }
+        return 'account';
+      }
+      if (target === 'account' || target === 'login') return 'account';
+      if (target === 'shop') return 'shop';
+      if (target === 'cart') return 'cart';
+      if (target === 'checkout') return 'checkout';
+      if (target === 'track-order') return 'track-order';
+      if (target === 'about') return 'about';
+      if (target === 'support') return 'support';
+      if (target === 'contact') return 'contact';
+      if (target.startsWith('policy-')) return target as PageRoute;
+    }
+    return 'home';
+  };
+
+  const [activePage, setActivePageState] = useState<PageRoute>(getInitialRoute);
   const [selectedProductId, setSelectedProductId] = useState<string>('dm-raw-250g');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [isSearchOpen, setIsSearchOpen] = useState<boolean>(false);
@@ -132,24 +208,73 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({
 
   // Admin Auth State & Token
   const [adminToken, setAdminToken] = useState<string | null>(() =>
-    localStorage.getItem('dm_admin_token')
+    typeof window !== 'undefined' ? localStorage.getItem('dm_admin_token') : null
   );
   const [isAdminAuthenticated, setIsAdminAuthenticated] = useState<boolean>(false);
+  const [isAdminAuthLoading, setIsAdminAuthLoading] = useState<boolean>(() =>
+    Boolean(typeof window !== 'undefined' && localStorage.getItem('dm_admin_token'))
+  );
   const [isDbLoading, setIsDbLoading] = useState<boolean>(false);
 
-  // Load state from LocalStorage or Fallbacks
-  const [products, setProducts] = useState<Product[]>(() => {
-    const saved = localStorage.getItem('dm_products_v5');
-    if (saved) {
-      try {
-        const parsed: Product[] = JSON.parse(saved);
-        return parsed;
-      } catch (e) {
-        return INITIAL_PRODUCTS;
+  const setActivePage = (page: PageRoute) => {
+    if (page === 'admin' && !isAdminAuthenticated && !localStorage.getItem('dm_admin_token')) {
+      setActivePageState('account');
+      if (typeof window !== 'undefined') {
+        window.history.replaceState(null, '', '/');
+      }
+      return;
+    }
+    setActivePageState(page);
+    if (typeof window !== 'undefined') {
+      if (page === 'admin') {
+        window.history.replaceState(null, '', '/admin');
+      } else if (page === 'home') {
+        window.history.replaceState(null, '', '/');
+      } else {
+        window.history.replaceState(null, '', `/#${page}`);
       }
     }
-    return INITIAL_PRODUCTS;
-  });
+  };
+
+  // Products Data: Authoritative state permanently managed via Firebase Firestore
+  const [products, setProducts] = useState<Product[]>(INITIAL_PRODUCTS);
+
+  // Real-time synchronization from Firebase Firestore
+  useEffect(() => {
+    // Purge deprecated local product caches to ensure clean Firebase state
+    try {
+      localStorage.removeItem('dm_products_v5');
+      localStorage.removeItem('dm_products_v4');
+    } catch (e) {}
+
+    let unsubscribe: (() => void) | undefined;
+    try {
+      const colRef = collection(db, 'products');
+      unsubscribe = onSnapshot(
+        colRef,
+        (snapshot) => {
+          if (!snapshot.empty) {
+            const list: Product[] = [];
+            snapshot.forEach((doc) => {
+              list.push(doc.data() as Product);
+            });
+            setProducts(list);
+          }
+        },
+        (error) => {
+          console.warn('Firestore snapshot listener error, will sync via API:', error);
+          refreshProducts();
+        }
+      );
+    } catch (err) {
+      console.warn('Could not attach Firestore listener, falling back to API fetch:', err);
+      refreshProducts();
+    }
+
+    return () => {
+      if (unsubscribe) unsubscribe();
+    };
+  }, []);
 
   const [cart, setCart] = useState<CartItem[]>(() => {
     const saved = localStorage.getItem('dm_cart_v5') || localStorage.getItem('dm_cart_v4');
@@ -264,7 +389,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({
   // Check admin session validation on initial load
   useEffect(() => {
     const verifyInitialSession = async () => {
-      const token = localStorage.getItem('dm_admin_token');
+      const token = typeof window !== 'undefined' ? localStorage.getItem('dm_admin_token') : null;
       if (token) {
         try {
           const res = await fetch('/api/auth/admin-verify', {
@@ -277,11 +402,12 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({
             setUser({
               id: 'admin-owner',
               fullName: 'Doctor Makhana Owner / Admin',
-              email: data.user?.email || 'admin@doctormakhana.com',
+              email: data.user?.email || 'doctormakhana@gmail.com',
               phone: '7649090402',
               role: 'admin',
               savedAddresses: [],
             });
+            setIsAdminAuthLoading(false);
             await refreshProducts(token);
             await refreshOrders(token);
             return;
@@ -289,9 +415,25 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({
             localStorage.removeItem('dm_admin_token');
             setIsAdminAuthenticated(false);
             setAdminToken(null);
+            setIsAdminAuthLoading(false);
+            if (activePage === 'admin') {
+              setActivePageState('account');
+              if (typeof window !== 'undefined') {
+                window.history.replaceState(null, '', '/');
+              }
+            }
           }
         } catch (e) {
           console.error('Admin token verification error:', e);
+          setIsAdminAuthLoading(false);
+        }
+      } else {
+        setIsAdminAuthLoading(false);
+        if (activePage === 'admin') {
+          setActivePageState('account');
+          if (typeof window !== 'undefined') {
+            window.history.replaceState(null, '', '/');
+          }
         }
       }
       refreshProducts();
@@ -300,11 +442,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({
     verifyInitialSession();
   }, []);
 
-  // Sync state to LocalStorage
-  useEffect(() => {
-    localStorage.setItem('dm_products_v5', JSON.stringify(products));
-  }, [products]);
-
+  // Sync state to LocalStorage (user preferences only, products are authoritative from Firebase)
   useEffect(() => {
     localStorage.setItem('dm_cart_v5', JSON.stringify(cart));
   }, [cart]);
@@ -413,7 +551,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({
     });
   };
 
-  // Product Operations (Connected to Server DB)
+  // Product Operations (Authoritatively persisted to Firebase Firestore)
   const addProduct = async (newProd: Product) => {
     try {
       const token = adminToken || localStorage.getItem('dm_admin_token');
@@ -428,18 +566,18 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({
 
       if (!res.ok) {
         const errorData = await res.json().catch(() => ({}));
-        throw new Error(errorData.error || 'Failed to add product to server');
+        throw new Error(errorData.error || 'Failed to add product to database');
       }
 
       const data = await res.json();
       const saved = data.product || newProd;
       setProducts((prev) => [saved, ...prev.filter((p) => p.id !== saved.id)]);
-      showToast('New product added to database and live store!', 'success');
+      showToast('New product permanently saved to Firebase!', 'success');
+      return saved;
     } catch (err: any) {
-      console.error('Error adding product:', err);
-      // Local fallback
-      setProducts((prev) => [newProd, ...prev]);
-      showToast(err.message || 'Product saved locally', 'info');
+      console.error('Error adding product to database:', err);
+      showToast(err.message || 'Failed to save product to database', 'error');
+      throw err;
     }
   };
 
@@ -457,7 +595,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({
 
       if (!res.ok) {
         const errorData = await res.json().catch(() => ({}));
-        throw new Error(errorData.error || 'Failed to update product on server');
+        throw new Error(errorData.error || 'Failed to update product in database');
       }
 
       const data = await res.json();
@@ -471,11 +609,12 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({
         )
       );
 
-      showToast('Product updated in database and live website!', 'success');
+      showToast('Product changes permanently saved to Firebase!', 'success');
+      return saved;
     } catch (err: any) {
-      console.error('Error updating product:', err);
-      setProducts((prev) => prev.map((p) => (p.id === updated.id ? updated : p)));
-      showToast(err.message || 'Product updated locally', 'info');
+      console.error('Error updating product in database:', err);
+      showToast(err.message || 'Failed to save product to database', 'error');
+      throw err;
     }
   };
 
@@ -491,16 +630,16 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({
 
       if (!res.ok) {
         const errorData = await res.json().catch(() => ({}));
-        throw new Error(errorData.error || 'Failed to delete product on server');
+        throw new Error(errorData.error || 'Failed to delete product from database');
       }
 
       setProducts((prev) => prev.filter((p) => p.id !== productId));
       setCart((prev) => prev.filter((item) => item.product.id !== productId));
-      showToast('Product removed from database and live catalog', 'info');
+      showToast('Product removed from Firebase and live store', 'info');
     } catch (err: any) {
-      console.error('Error deleting product:', err);
-      setProducts((prev) => prev.filter((p) => p.id !== productId));
-      showToast(err.message || 'Product removed locally', 'info');
+      console.error('Error deleting product from database:', err);
+      showToast(err.message || 'Failed to delete product from database', 'error');
+      throw err;
     }
   };
 
@@ -523,38 +662,34 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({
       const updated = data.product;
       setProducts((prev) => prev.map((p) => (p.id === productId ? updated : p)));
       showToast(
-        `Product visibility changed to: ${updated.isPublished ? 'Published (Live)' : 'Draft (Hidden)'}`,
+        `Product visibility updated to: ${updated.isPublished ? 'Published (Live)' : 'Draft (Hidden)'}`,
         'info'
       );
     } catch (err: any) {
       console.error('Error toggling publish state:', err);
-      setProducts((prev) =>
-        prev.map((p) => (p.id === productId ? { ...p, isPublished: !p.isPublished } : p))
-      );
-      showToast(err.message || 'Toggled locally', 'info');
+      showToast(err.message || 'Failed to update visibility', 'error');
+      throw err;
     }
   };
 
   const uploadProductImage = async (
     fileOrBase64: File | string,
-    filename?: string
+    filename?: string,
+    onProgress?: (percent: number) => void
   ): Promise<string> => {
-    let base64Data = '';
-    let resolvedFilename = filename || 'product_image.jpg';
+    const token =
+      adminToken || (typeof localStorage !== 'undefined' ? localStorage.getItem('dm_admin_token') : null);
 
     if (fileOrBase64 instanceof File) {
-      resolvedFilename = fileOrBase64.name;
-      base64Data = await new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result as string);
-        reader.onerror = reject;
-        reader.readAsDataURL(fileOrBase64);
-      });
-    } else {
-      base64Data = fileOrBase64;
+      return await uploadProductImageToStorage(fileOrBase64, token, onProgress);
     }
 
-    const token = adminToken || localStorage.getItem('dm_admin_token');
+    let resolvedFilename = filename || 'product_image.jpg';
+    const base64Data =
+      typeof fileOrBase64 === 'string' ? fileOrBase64 : await compressImageIfNeeded(fileOrBase64);
+
+    if (onProgress) onProgress(40);
+
     const res = await fetch('/api/upload', {
       method: 'POST',
       headers: {
@@ -570,6 +705,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({
     }
 
     const data = await res.json();
+    if (onProgress) onProgress(100);
     return data.url;
   };
 
@@ -761,18 +897,23 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({
       setUser(null);
       showToast('Admin logged out securely.', 'info');
       await refreshProducts('');
-      setActivePage('home');
+      setActivePageState('home');
+      if (typeof window !== 'undefined') {
+        window.history.replaceState(null, '', '/');
+      }
     }
   };
 
   // Customer Auth
   const login = (emailOrPhone: string, role: 'customer' | 'admin' = 'customer') => {
+    // Only allow 'admin' role if already authenticated via server token
+    const effectiveRole = role === 'admin' && isAdminAuthenticated ? 'admin' : 'customer';
     const newUser: UserProfile = {
       id: 'usr-' + Date.now(),
-      fullName: role === 'admin' ? 'Doctor Makhana Admin' : 'Valued Customer',
+      fullName: effectiveRole === 'admin' ? 'Doctor Makhana Admin' : 'Valued Customer',
       email: emailOrPhone.includes('@') ? emailOrPhone : 'shikhuverma2804@gmail.com',
       phone: '8989214183',
-      role,
+      role: effectiveRole,
       savedAddresses: [
         {
           fullName: 'Shikhu Verma',
@@ -786,7 +927,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({
       ],
     };
     setUser(newUser);
-    showToast(`Welcome ${role === 'admin' ? 'Admin' : 'back'} to Doctor Makhana!`, 'success');
+    showToast(`Welcome ${effectiveRole === 'admin' ? 'Admin' : 'back'} to Doctor Makhana!`, 'success');
   };
 
   const logout = () => {
@@ -881,6 +1022,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({
         isDbLoading,
         adminToken,
         isAdminAuthenticated,
+        isAdminAuthLoading,
         adminLogin,
         adminLogout,
         orders,
